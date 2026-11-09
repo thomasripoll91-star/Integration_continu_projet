@@ -2,9 +2,9 @@ import os
 import sys
 
 # Modules existants du projet
-import insert_data
-import compute_sum
-import db
+import src.lvl_1.insert_data as insert_data
+import src.lvl_1.compute_sum as compute_sum
+import src.lvl_1.db as db
 
 def run_pipeline(db_path: str = "data/lvl_1/transactions.db") -> bool:
     print("=" * 60)

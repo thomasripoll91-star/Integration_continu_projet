@@ -69,5 +69,3 @@ def pipeline_compute(
     print(df_avec_flag[['datetime_transaction', 'montant', 'is_high_amount']])
 
     return df_avec_flag, sommes_origine, sommes_banque, sommes_dest
-
-pipeline_compute(filenames)
