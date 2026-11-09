@@ -30,7 +30,7 @@ def compute_sum_by_iban_destinataire(df: pd.DataFrame) -> pd.Series:
     """Calcule la somme des montants reçus par iban_destinataire"""
     return df.groupby('iban_destinataire')['montant'].sum()
 
-def add_high_amount_flag(df: pd.DataFrame, threshold: float = 5000.0) -> pd.DataFrame:
+def add_high_amount_flag(df: pd.DataFrame, threshold: float = 10000.0) -> pd.DataFrame:
     """
     Ajoute un flag booléen lorsque le montant dépasse le seuil 
     Ne modifie pas le DataFrame d'origine grâce à .copy().
