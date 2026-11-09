@@ -25,6 +25,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas pytest
 
-      - name: Exécution des tests d'intégration lvl1
+      - name: Exécution des tests d'intégration lvl
         run: |
           pytest -v tests/lvl_1/test_integration.py
+
+      - name: Exécution des tests d'intégration avec retry lvl
+        run: |
+          pytest -v tests/lvl_1/test_retry.py

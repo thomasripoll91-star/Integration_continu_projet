@@ -1,2 +1,4 @@
 pandas
+sqlite3
+hashlib
 pytest
