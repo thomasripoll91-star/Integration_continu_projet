@@ -1,34 +1,40 @@
-name: CI Pipeline
+name: CI Pipeline Financière (Lvl 1 & Lvl 2 S3)
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
 
 jobs:
-  test:
+  test-pipeline:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout du code
+      - name: 📥 Récupération du code (Checkout)
         uses: actions/checkout@v4
 
-      - name: Configuration de Python
+      - name: 🐍 Configuration de Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: 'pip'
 
-      - name: Installation des dépendances
+      - name: 📦 Installation des dépendances
         run: |
           python -m pip install --upgrade pip
-          pip install pandas pytest
+          pip install -r requirements.txt
 
-      - name: Exécution des tests d'intégration lvl
+      - name: 🐳 Démarrage du stockage S3 (Docker Compose)
         run: |
-          pytest -v tests/lvl_1/test_integration.py
+          docker compose up -d
+          sleep 3
 
-      - name: Exécution des tests d'intégration avec retry lvl
+      - name: 🧪 Tests Niveau 1 (Intégration & Retry BDD)
         run: |
-          pytest -v tests/lvl_1/test_retry.py
+          pytest -v tests/lvl_1/
+
+      - name: ☁️ Exécution Pipeline & Tests Niveau 2 (S3 & Retry S3)
+        run: |
+          python -m src.lvl_2.pipeline_S3
+          pytest -v tests/lvl_2/

@@ -1,0 +1,8 @@
+services:
+  s3:
+    image: chrislusf/seaweedfs:latest
+    container_name: local_s3_seaweedfs
+    ports:
+      - "9000:8333" # Redirige le port S3 de SeaweedFS (8333) vers ton port 9000
+      - "8888:8888" # Interface Web (Filer) sur http://localhost:8888
+    command: "server -s3 -s3.port=8333 -filer"
