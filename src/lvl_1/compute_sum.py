@@ -50,7 +50,7 @@ def pipeline_compute(
     df_transactions = load_multiple_csvs(filenames)
 
     # 2. Enrichissement (Flag > 5000)
-    df_avec_flag = add_high_amount_flag(df_transactions, threshold=5000.0)
+    df_avec_flag = add_high_amount_flag(df_transactions)
 
     # 3. Calculs des agrégats (sur lignes avec IBAN / banques valides)
     df_valid = df_avec_flag.dropna(subset=['iban_origine', 'banque_source', 'iban_destinataire', 'montant'])
