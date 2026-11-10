@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie de tout le code source et des données
 COPY src/ ./src/
 COPY tests/ ./tests/
-COPY data/ ./data/
+# COPY data/ ./data/
 
 # Le conteneur exécute le scheduler de production (Niveau 3)
 CMD ["python", "-m", "src.lvl_3.scheduler"]
