@@ -8,6 +8,7 @@ import src.lvl_1.insert_data as insert_data
 import src.lvl_1.compute_sum as compute_sum
 import src.lvl_1.db as db
 import src.lvl_2.s3_manager as s3_manager
+import src.lvl_3.slm_extractor as slm_extractor
 
 DB_PATH_LVL2 = "data/lvl_2/transactions_s3.db"
 
@@ -111,7 +112,7 @@ def run_s3_pipeline(db_path: str = DB_PATH_LVL2) -> bool:
         temp_path = f"data/lvl_2/tmp_{s3_key}"
         insert_data.generate_csv_transition(data, temp_path)
         s3_manager.upload_csv_to_s3(temp_path, s3_key)
-        os.remove(temp_path)  # Supprime le fichier local : seul S3 détient désormais la donnée
+        os.remove(temp_path)  
 
     # 3. Vérifier que les fichiers sont présents dans le stockage S3
     print("\n[3/5] 🔍 Vérification des fichiers dans le bucket S3...")
@@ -127,12 +128,34 @@ def run_s3_pipeline(db_path: str = DB_PATH_LVL2) -> bool:
     all_dfs = []
 
     for s3_key in s3_files:
-        if not s3_key.endswith(".csv"):
+        client = s3_manager.get_s3_client()
+        if s3_key.endswith(".csv"):
+            # Traitement tabulaire classique (Niveau 2)
+            df_raw, file_hash = s3_manager.fetch_csv_from_s3_with_retry(s3_key)
+            df_flagged = compute_sum.add_high_amount_flag(df_raw, threshold=5000.0)
+            insert_s3_dataframe_to_db(df_flagged, s3_key, file_hash, db_path)
+            all_dfs.append(df_flagged)
+            
+        elif s3_key.endswith(".txt"):
+            # Traitement non structuré par le SLM (Niveau 3 - Option 3)
+            print(f"🤖 [SLM] Détection d'un fichier texte : {s3_key}")
+            obj = client.get_object(Bucket=s3_manager.BUCKET_NAME, Key=s3_key)
+            raw_bytes = obj['Body'].read()
+            
+            # Calcul du hash pour la protection anti-doublon (même logique que les CSV)
+            import hashlib
+            file_hash = hashlib.sha256(raw_bytes).hexdigest()
+            
+            text_content = raw_bytes.decode('utf-8')
+            lines = [line.strip() for line in text_content.splitlines() if line.strip()]
+            
+            # Conversion du texte brut en DataFrame structuré via le SLM
+            df_raw = slm_extractor.convert_text_to_dataframe(lines)
+            df_flagged = compute_sum.add_high_amount_flag(df_raw, threshold=5000.0)
+            insert_s3_dataframe_to_db(df_flagged, s3_key, file_hash, db_path)
+            all_dfs.append(df_flagged)
+        else:
             continue
-        df_raw, file_hash = s3_manager.fetch_csv_from_s3_with_retry(s3_key)
-        df_flagged = compute_sum.add_high_amount_flag(df_raw, threshold=5000.0)
-        insert_s3_dataframe_to_db(df_flagged, s3_key, file_hash, db_path)
-        all_dfs.append(df_flagged)
 
     # 5. Mise à jour des agrégats en base
     print("\n[5/5] 📊 Calcul et enregistrement des agrégats...")

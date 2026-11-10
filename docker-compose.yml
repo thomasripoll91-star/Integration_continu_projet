@@ -1,8 +1,32 @@
+version: '3.8'
+
 services:
+  # 1. Le stockage objet S3 local (SeaweedFS)
   s3:
     image: chrislusf/seaweedfs:latest
     container_name: local_s3_seaweedfs
     ports:
-      - "9000:8333" # Redirige le port S3 de SeaweedFS (8333) vers ton port 9000
-      - "8888:8888" # Interface Web (Filer) sur http://localhost:8888
+      - "9000:8333" # Port API S3
+      - "8888:8888" # Interface Web (http://localhost:8888/buckets/)
     command: "server -s3 -s3.port=8333 -filer"
+    volumes:
+      - seaweed_data:/data
+    restart: always
+
+  # 2. Le conteneur de production (Exécute la pipeline et le planificateur / scheduler)
+  pipeline-worker:
+    build: .
+    container_name: prod_pipeline_worker
+    depends_on:
+      - s3
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - shared_data:/app/data
+    restart: always
+    # Lance le planificateur du niveau 3 pour automatiser l'exécution récurrente
+    command: ["python", "-m", "src.lvl_3.scheduler"]
+
+volumes:
+  seaweed_data:
+  shared_data:

@@ -1,4 +1,4 @@
-name: CI Pipeline Financière (Lvl 1 & Lvl 2 S3)
+name: CI Pipeline Financière (Lvl 1, 2 & 3)
 
 on:
   push:
@@ -20,15 +20,31 @@ jobs:
           python-version: "3.11"
           cache: 'pip'
 
+      - name: 🤖 Cache des modèles Hugging Face (Flan-T5)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          # Le cache se mettra à jour si le fichier slm_extractor.py est modifié
+          key: ${{ runner.os }}-hf-${{ hashFiles('**/slm_extractor.py') }}
+          restore-keys: |
+            ${{ runner.os }}-hf-
+
       - name: 📦 Installation des dépendances
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest flake8
+
+      - name: 🧹 Vérification de la syntaxe (Linting basique)
+        run: |
+          # Vérifie uniquement les erreurs critiques (erreurs de syntaxe, variables non définies)
+          flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: 🐳 Démarrage du stockage S3 (Docker Compose)
         run: |
           docker compose up -d
-          sleep 3
+          # Attente active (ping du port) : beaucoup plus fiable que 'sleep 3'
+          timeout 30 bash -c 'until curl -s http://localhost:9000 > /dev/null; do sleep 1; done' || echo "S3 potentiellement lent à démarrer"
 
       - name: 🧪 Tests Niveau 1 (Intégration & Retry BDD)
         run: |
@@ -38,3 +54,11 @@ jobs:
         run: |
           python -m src.lvl_2.pipeline_S3
           pytest -v tests/lvl_2/
+
+      - name: 🚀 Tests Niveau 3 (SLM & Extraction textuelle)
+        run: |
+          # À décommenter si tu as créé un dossier de tests lvl_3
+          # pytest -v tests/lvl_3/
+          
+          # Valide simplement que le script se lance sans erreur d'import ou de syntaxe
+          python -c "from src.lvl_3.slm_extractor import get_slm_model_and_tokenizer; get_slm_model_and_tokenizer()"

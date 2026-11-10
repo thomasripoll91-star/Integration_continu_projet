@@ -4,5 +4,14 @@ pandas>=2.0.0
 # --- Stockage et Cloud (S3 / MinIO) ---
 boto3>=1.28.0
 
+# --- Planificateur --- 
+schedule>=1.2.0
+
 # --- Tests et Qualité de code ---
 pytest>=7.4.0
+
+
+# -- slm ---
+transformers>=4.35.0
+torch>=2.0.0
+sentencepiece>=0.1.99
